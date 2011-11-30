@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from avro import schema, datafile, io
+import itertools
 import sys
 
 SCHEMA_STR = """{
@@ -43,87 +44,74 @@ SCHEMA = schema.parse(SCHEMA_STR)
 
 
 def avro_writer(file_name):
-	rec_writer = io.DatumWriter(SCHEMA)
-	df_writer = datafile.DataFileWriter(
-		open(file_name, 'wb'),
-		rec_writer,
-		writers_schema = SCHEMA,
-		codec = 'deflate'
-	)
-	return df_writer
+    rec_writer = io.DatumWriter(SCHEMA)
+    df_writer = datafile.DataFileWriter(
+        open(file_name, 'wb'),
+        rec_writer,
+        writers_schema = SCHEMA,
+        codec = 'deflate'
+    )
+    return df_writer
 
 
-class MyWriter:
-	def __init__(self, output_dir, max_in_file):
-		self.file_count = 0
-		self.rec_count = 0
-		self.max_in_file = max_in_file
-		self.output_dir = output_dir
-		self.writer = None
-	def add(self, rec):
-		if not rec:
-			return
-		if not self.writer:
-			self.writer = avro_writer("%s/%d.avro" % ( self.output_dir, self.file_count))
-		self.writer.append(rec)
-		self.rec_count += 1
-		if self.rec_count > self.max_in_file:
-			print >>sys.stderr,"Flushing out", self.rec_count
-			self.writer.close()
-			self.writer = None
-			self.rec_count = 0
-			self.file_count += 1
-	def close(self):
-		if self.writer:
-			print >>sys.stderr,"Flushing out", self.rec_count
-			self.writer.close()
-			self.rec_count = 0
-			self.file_count += 1
-
-		
-def read_and_write_data(reader, output_dir, number_per_file):
-	session_id = -1
-	rec = None
-	output_writer = MyWriter(output_dir, number_per_file)
-	for e in reader:
-		my_session_id = int(e[0])
-		if my_session_id != session_id:
-			output_writer.add(rec)
-			session_id = my_session_id
-			rec = {}
-			rec['sessionId'] = session_id
-			rec['regionId'] = int(e[4])
-			rec['queries'] = []
-			rec['clicks'] = []
-		if e[2] == 'Q':
-			add_query(rec, e)
-		else:
-			add_click(rec, e)	
-	output_writer.add(rec)
-	output_writer.close()
+def emit_writers(output_dir):
+    file_number = 0
+    while True:
+        yield avro_writer("%s/%d.avro" % ( output_dir, file_number))
+        file_number+=1
 
 
-def add_click(row, e):
-	entry = {} 	
-	entry['time']      = int(e[1])
-	entry['url']      = int(e[3])
-	row['clicks'].append(entry)
+def emit_record(reader):
+    session_id = -1
+    rec = None
+    for e in reader:
+        my_session_id = int(e[0])
+        if my_session_id != session_id:
+            if rec:
+                yield rec
+            session_id = my_session_id
+            rec = {}
+            rec['sessionId'] = session_id
+            rec['regionId']  = int(e[4])
+            rec['queries']   = []
+            rec['clicks']    = []
+        if e[2] == 'Q':
+            entry = {} 	
+            entry['time']      = int(e[1])
+            entry['queryHash'] = int(e[3])
+            entry['urls']      = [ int(_) for _ in e[5:] ]
+            rec['queries'].append(entry)
+        else:
+            entry = {} 	
+            entry['time'] = int(e[1])
+            entry['url']  = int(e[3])
+            rec['clicks'].append(entry)
+    if rec:
+        yield rec
 
 
-def add_query(row, e):
-	entry = {} 	
-	entry['time']      = int(e[1])
-	entry['queryHash'] = int(e[3])
-	entry['urls'] = [ int(_) for _ in e[5:] ]
-	row['queries'].append(entry)
-		
+def emit_record_bunch(recgen, number_per_file):
+    while recgen:
+        yield itertools.islice(recgen, number_per_file)
+
+
+def emit_records_and_writer(reader, output_dir, number_per_file):
+    inputs  = emit_record_bunch( emit_record( reader ), number_per_file )
+    writers = emit_writers(output_dir)
+    return itertools.izip(inputs, writers)
+
+
+def process(input_file, output_dir, number_per_file):
+    reader = ( _.strip().split() for _ in open(input_file))
+    for recs, writer in emit_records_and_writer(reader, output_dir, number_per_file):
+        for rec in recs:
+            writer.append(rec)
+        writer.close()
+
 
 def main(args):
-	reader = ( _.strip().split() for _ in open(args[0]))
-	output_dir = args[1]
-	number_per_file = int(args[2])
-	read_and_write_data(reader, output_dir, number_per_file)
+    process(args[0], args[1], int(args[2]))
 
 
 if __name__ == '__main__':
-	main(sys.argv[1:])
+    main(sys.argv[1:])
