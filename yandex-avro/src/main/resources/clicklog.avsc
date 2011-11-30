@@ -1,0 +1,34 @@
+{
+  "type": "record", 
+  "name": "Clickstream",
+  "namespace": "com.ladro.yandex.avro",
+  "fields": [
+  		{"name": "sessionId", "type": "long"}, 
+		{"name": "regionId", "type": "int" },
+	    {"name": "queries", "type": {
+			"type": "array",
+			"items": {
+				"type": "record",
+				"name": "Query",
+				"fields": [
+					{"name": "queryHash", "type": "long"},
+					{"name": "time", "type": "int"},
+					{"name": "urls", "type": {"type": "array", "items": "long" }}
+					]
+				}
+			}
+		}, 
+	    {"name": "clicks", "type": {
+			"type": "array",
+			"items": {
+				"type": "record",
+				"name": "Click",
+				"fields": [
+					{"name": "time", "type": "int"},
+					{"name": "url", "type": "long" }
+					]
+				}
+			}
+		}
+	]
+}
