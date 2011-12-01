@@ -1,0 +1,11 @@
+{
+  "type": "record", 
+  "name": "QueryGrade",
+  "namespace": "com.ladro.yandex.avro",
+  "fields": [
+  		{"name": "queryHash", "type": "long"}, 
+		{"name": "regionId", "type": "int" },
+		{"name": "good", "type": {"type": "array", "items": "long" }},
+		{"name": "bad", "type": {"type": "array", "items": "long" }}
+	]
+}
