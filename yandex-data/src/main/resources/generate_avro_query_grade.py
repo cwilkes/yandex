@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import pdb
-from generate_avro_bunches import process
+from generate_avro_bunches import split_input
 import sys
 
 SCHEMA_STR = """{
@@ -36,7 +36,7 @@ def additional_row(rec, e):
 def main(args):
     if not args:
         sys.exit("Usage: python ./generate_avro_query_grade.py  /tmp/release/Trainq.txt /tmp/e 2000")
-    process(args[0], args[1], int(args[2]), SCHEMA_STR, create_record, additional_row)
+    split_input(args[0], args[1], int(args[2]), SCHEMA_STR, create_record, additional_row)
 
 
 if __name__ == '__main__':
