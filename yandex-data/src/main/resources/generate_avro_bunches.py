@@ -63,10 +63,10 @@ def split_input(input_file, output_dir, number_per_file, schema_str, create_reco
             break
 
 
-def __init__ == '__main__':
+if __name__ == '__main__':
     """makes an input file for the query_grade"""
-    out = open('/tmp/in.txt', 'w')
-    out.print('%d\t%d\t%d\t%d' % (477974, 1, 731612, 1))
-    out.print('%d\t%d\t%d\t%d' % (477974, 1, 38256263, 0))
-    out.print('%d\t%d\t%d\t%d' % (145204, 0, 1093524, 0)
+    out = open(sys.argv[1], 'w')
+    out.write('%d\t%d\t%d\t%d' % (477974, 1, 731612,   1))
+    out.write('%d\t%d\t%d\t%d' % (477974, 1, 38256263, 0))
+    out.write('%d\t%d\t%d\t%d' % (145204, 0, 1093524,  0))
     out.close()
