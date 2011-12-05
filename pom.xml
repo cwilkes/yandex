@@ -7,7 +7,7 @@
 	<packaging>pom</packaging>
 	<modules>
 		<module>yandex-avro</module>
-		<module>yandex-python</module>
+		<module>yandex-data</module>
 	</modules>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -79,7 +79,12 @@
 			<dependency>
 				<groupId>com.ladro.yandex</groupId>
 				<artifactId>yandex-avro</artifactId>
-				<version>1.0.0-SNAPSHOT</version>
+				<version>${project.version}</version>
+			</dependency>
+			<dependency>
+				<groupId>com.ladro.yandex</groupId>
+				<artifactId>yandex-data</artifactId>
+				<version>${project.version}</version>
 			</dependency>
 		</dependencies>
 	</dependencyManagement>
